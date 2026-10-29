@@ -1,6 +1,6 @@
 // Service worker: makes the app installable and lets lessons, vocab and practice work offline.
 // Bump VERSION whenever you change any app file so phones pick up the new version.
-const VERSION = "gre-prep-v1";
+const VERSION = "gre-prep-v2";
 const SHELL = [
   "/",
   "/index.html",

@@ -38,6 +38,20 @@ const INSTR=[
  "Write a response in which you discuss your views on the policy and explain your reasoning. In developing and supporting your position, consider the possible consequences of implementing it."
 ];
 
+/* ---------- icons ---------- */
+const SV=(d,extra)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${extra||""}>${d}</svg>`;
+const ICON={
+  lesson:SV('<path d="M4 4.5A1.5 1.5 0 015.5 3H20v15H5.5A1.5 1.5 0 004 19.5z"/><path d="M4 19.5A1.5 1.5 0 005.5 21H20v-3"/>'),
+  words:SV('<rect x="3" y="7" width="14" height="14" rx="2.5"/><path d="M7 3h11.5A2.5 2.5 0 0121 5.5V17"/>'),
+  practice:SV('<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/>'),
+  bolt:SV('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+  essay:SV('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>'),
+  clock:SV('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>'),
+  alert:SV('<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>'),
+  check:SV('<path d="M5 12.5l4.5 4.5L19 7.5"/>',' stroke-width="2.6"'),
+  chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>'
+};
+
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -130,33 +144,36 @@ function renderStats(){
   const a=accuracy();$("#st-acc").textContent=a===null?"–":a+"%";
   $("#st-words").textContent=wordsLearned();
   $("#st-lessons").textContent=Object.keys(S.lessons).filter(k=>LBY[k]&&on(S.lessons,k)).length+"/"+LESSONS.length;
+  let tot=0,dn=0;WEEKS.forEach((w,i)=>{w.tasks.forEach((_,j)=>{tot++;if(on(S.done,`w${i+1}t${j}`))dn++;});w.lessons.forEach(id=>{tot++;if(on(S.lessons,id))dn++;});});
+  const frac=tot?dn/tot:0,C=263.9;$("#ring-prog").setAttribute("stroke-dashoffset",String(C*(1-frac)));
+  $("#ring-label").textContent=Math.round(frac*100)+"% of plan done";
 }
 
 /* ---------- TODAY ---------- */
 function nextGroup(){for(let g=0;g<VOCAB.length;g++){if(VOCAB[g].some(w=>!S.vocab[w[0]]))return g;}return null;}
 function renderToday(){
   const w=curWeek(), wk=WEEKS[w-1], dow=today().getDay();
-  $("#today-title").textContent="Today · Week "+w;
-  $("#eyebrow").textContent=today().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})+" · Week "+w+" of 12";
+  $("#today-title").textContent="Week "+w+" of 12";
+  $("#eyebrow").textContent=today().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   const items=[];
   const pendingLessons=wk.lessons.filter(id=>!on(S.lessons,id));
-  if(pendingLessons.length){const l=LBY[pendingLessons[0]];items.push({ok:false,t:"Lesson: "+l.title,s:l.mins+" min · "+l.track,href:"#lesson-"+l.id});}
-  else if(wk.lessons.length){items.push({ok:true,t:"This week's lessons",s:"All done",href:"#learn"});}
+  if(pendingLessons.length){const l=LBY[pendingLessons[0]];items.push({ok:false,t:l.title,s:"Lesson · "+l.mins+" min · "+l.track,href:"#lesson-"+l.id,ic:"lesson",c:""});}
+  else if(wk.lessons.length){items.push({ok:true,t:"This week's lessons",s:"All done",href:"#learn",ic:"lesson",c:""});}
   const due=dueWords().length;
-  items.push({ok:due===0,t:due?"Review "+due+" vocab word"+(due>1?"s":"")+" due today":"No vocab reviews due",s:"Spaced review",href:"#vocab",act:()=>setVMode("review")});
+  items.push({ok:due===0,t:due?"Review "+due+" word"+(due>1?"s":""):"No word reviews due",s:"Spaced review",href:"#vocab",ic:"words",c:"v",act:()=>setVMode("review")});
   const g=nextGroup();
-  if(g!==null){const left=VOCAB[g].filter(x=>!S.vocab[x[0]]).length;items.push({ok:false,t:"Learn new words: Group "+(g+1),s:left+" words left in this group",href:"#vocab",act:()=>{vGroup=g;setVMode("learn");}});}
+  if(g!==null){const left=VOCAB[g].filter(x=>!S.vocab[x[0]]).length;items.push({ok:false,t:"New words · Group "+(g+1),s:left+" of 25 words left",href:"#vocab",ic:"words",c:"v",act:()=>{vGroup=g;setVMode("learn");}});}
   const doneToday=Object.values(S.att).filter(a=>a.last===TODAY).length;
   const topic=wk.lessons.find(id=>QUESTIONS.some(q=>q.topic===id))||null;
   const wkTopic=weakest()[0];
   const pTopic=w>=7&&wkTopic?wkTopic.k:topic;
   if(w>=3){const hardToday=Object.entries(S.att).filter(([id,a])=>a.last===TODAY&&QBY[id]&&QBY[id].diff===3&&QBY[id].sec==="quant").length;
-    items.push({ok:hardToday>=5,t:"Hard Quant set ("+Math.min(hardToday,5)+"/5)",s:"Where Quant 165+ is decided",href:"#practice",act:()=>presetPractice(null,"new",{sec:"quant",diff:3})});}
-  items.push({ok:doneToday>=10,t:"Practice set: "+(pTopic&&LBY[pTopic]?LBY[pTopic].title:"mixed")+" ("+Math.min(doneToday,10)+"/10)",s:"10 questions, read every explanation",href:"#practice",act:()=>presetPractice(pTopic)});
-  if(dow===3||dow===6){const wrote=essays.some(e=>e.date===TODAY);items.push({ok:wrote,t:"Write one timed Issue essay",s:"30 minutes, then get it scored",href:"#essay"});}
-  if(w>=7&&dow===6){const mocked=S.mocks.some(m=>m.d===TODAY);items.push({ok:mocked,t:"Timed section in the Mock tab",s:"Quant or Verbal, real pace",href:"#mock"});}
-  if(dow===0){items.push({ok:false,t:"Review your Mistakes list",s:"Retry missed questions and reread your lessons",href:"#mistakes"});}
-  $("#todo").innerHTML=items.map((it,i)=>`<a href="${it.href}" data-i="${i}" class="${it.ok?"ok":""}"><span class="tick" aria-hidden="true"></span><span><b>${esc(it.t)}</b><small>${esc(it.s)}</small></span><span class="go">${it.ok?"Done":"Go →"}</span></a>`).join("");
+    items.push({ok:hardToday>=5,t:"Hard Quant set",s:Math.min(hardToday,5)+" of 5 done · where 165+ is decided",href:"#practice",ic:"bolt",c:"a",act:()=>presetPractice(null,"new",{sec:"quant",diff:3})});}
+  items.push({ok:doneToday>=10,t:"Practice: "+(pTopic&&LBY[pTopic]?LBY[pTopic].title:"mixed set"),s:Math.min(doneToday,10)+" of 10 questions today",href:"#practice",ic:"practice",c:"t",act:()=>presetPractice(pTopic)});
+  if(dow===3||dow===6){const wrote=essays.some(e=>e.date===TODAY);items.push({ok:wrote,t:"Timed Issue essay",s:"30 minutes, then get it scored",href:"#essay",ic:"essay",c:"v"});}
+  if(w>=7&&dow===6){const mocked=S.mocks.some(m=>m.d===TODAY);items.push({ok:mocked,t:"Timed section",s:"Quant or Verbal at real pace",href:"#mock",ic:"clock",c:"a"});}
+  if(dow===0){items.push({ok:false,t:"Review your mistakes",s:"Retry missed questions",href:"#mistakes",ic:"alert",c:"r"});}
+  $("#todo").innerHTML=items.map((it,i)=>`<a href="${it.href}" data-i="${i}" class="${it.ok?"ok":""}"><span class="ico ${it.c||""}">${it.ok?ICON.check:ICON[it.ic||"practice"]}</span><span class="li-text"><b>${esc(it.t)}</b><small>${esc(it.s)}</small></span>${it.ok?'<span class="go">Done</span>':ICON.chev}</a>`).join("");
   $$("#todo a").forEach(a=>a.addEventListener("click",()=>{const it=items[+a.dataset.i];if(it.act)it.act();}));
   // weak areas
   const t=topicStats();const rows=Object.entries(t).map(([k,v])=>({k,acc:v.c/v.n,n:v.n})).sort((a,b)=>a.acc-b.acc).slice(0,6);
@@ -164,7 +181,7 @@ function renderToday(){
   const wt=weakest()[0];$("#drill-weak").hidden=!wt;$("#drill-weak").onclick=()=>presetPractice(wt&&wt.k);
   // week
   const ids=wk.tasks.map((_,j)=>`w${w}t${j}`);
-  $("#today-week").innerHTML=`<p><b style="font-family:var(--f-display)">${esc(wk.t)}</b></p>`+
+  $("#today-week").innerHTML=`<p style="font-weight:700;margin-bottom:4px">${esc(wk.t)}</p>`+
     wk.lessons.map(id=>`<div class="task${on(S.lessons,id)?" checked":""}"><input type="checkbox" disabled${on(S.lessons,id)?" checked":""} aria-label="lesson done"><label><a href="#lesson-${id}" style="color:inherit">Lesson: ${esc(LBY[id].title)}</a></label></div>`).join("")+
     wk.tasks.map((t,j)=>`<div class="task${on(S.done,ids[j])?" checked":""}"><input type="checkbox" id="tw-${ids[j]}" data-task="${ids[j]}"${on(S.done,ids[j])?" checked":""}><label for="tw-${ids[j]}">${esc(t)}</label></div>`).join("");
   renderStats();
@@ -194,15 +211,15 @@ $("#track-filter").addEventListener("click",e=>{const t=e.target.dataset.t;if(!t
 function renderLesson(id){
   const l=LBY[id];if(!l){location.hash="learn";return;}
   const nq=QUESTIONS.filter(q=>q.topic===id).length;
-  $("#lesson").innerHTML=`<div class="row"><span class="pill">${esc(l.track)}</span><span class="mono">Week ${l.week} · ${l.mins} min</span></div>
+  $("#lesson").innerHTML=`<div class="row"><span class="pill">${esc(l.track)}</span><span class="status">Week ${l.week} · ${l.mins} min</span></div>
    <h2>${esc(l.title)}</h2><p class="note">${esc(l.sum)}</p>
    <div class="lesson-body scroll-x">${l.body}</div>
    <h4>Rules to remember</h4><ul class="rules">${l.rules.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>
    <h4>Traps</h4><ul class="rules">${l.traps.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>
    <h4>Worked examples</h4>
    ${l.examples.map((x,i)=>`<div class="ex"><p>${esc(x.q)}</p><button class="ghost" data-reveal="${i}" style="justify-self:start">Show solution</button><div class="ans" id="ans-${i}" hidden>${esc(x.a)}</div></div>`).join("")}
-   <div class="row" style="margin-top:8px">${nq?`<button class="primary" id="l-practice">Practice ${nq} questions on this</button>`:(id==="w1"?`<a class="btn primary" href="#essay">Write an essay</a>`:(id==="v1"?`<a class="btn primary" href="#vocab">Open vocab</a>`:""))}
-   <button id="l-done">${on(S.lessons,id)?"Marked complete ✓":"Mark lesson complete"}</button>
+   <div class="stack" style="margin-top:8px">${nq?`<button class="primary block" id="l-practice">Practice ${nq} questions on this</button>`:(id==="w1"?`<a class="btn primary block" href="#essay">Write an essay</a>`:(id==="v1"?`<a class="btn primary block" href="#vocab">Open vocab</a>`:""))}
+   <button class="block" id="l-done">${on(S.lessons,id)?"Marked complete ✓":"Mark lesson complete"}</button>
    <button class="ghost" id="l-ask">Ask the tutor about this</button></div>`;
   $$("#lesson [data-reveal]").forEach(b=>b.onclick=()=>{const a=$("#ans-"+b.dataset.reveal);a.hidden=!a.hidden;b.textContent=a.hidden?"Show solution":"Hide solution";});
   if($("#l-practice"))$("#l-practice").onclick=()=>{presetPractice(id);location.hash="practice";};
@@ -363,8 +380,8 @@ function renderPQ(){
   $("#p-pos").textContent="Question "+(P.i+1)+" of "+P.list.length;
   $("#p-bar").style.width=(P.i/P.list.length*100)+"%";
   const lt=LBY[q.topic];
-  $("#p-card").innerHTML=`<div class="qhead"><span class="row"><span class="pill">${esc(q.sec==="quant"?"Quant":"Verbal")}</span><span class="note">${esc(lt?lt.title:"")}</span></span><span class="mono">${"●".repeat(q.diff)}${"○".repeat(3-q.diff)}</span></div>${qHTML(q,name)}
-    <div class="row"><button class="primary" id="pq-check">Check answer</button><button id="pq-next" hidden>${P.i+1<P.list.length?"Next question →":"See results"}</button></div><div id="pq-fb"></div>`;
+  $("#p-card").innerHTML=`<div class="qhead"><span class="row"><span class="pill">${esc(q.sec==="quant"?"Quant":"Verbal")}</span><span class="note">${esc(lt?lt.title:"")}</span></span><span class="pill ${q.diff===3?"warn":q.diff===1?"done":""}">${["","Easy","Medium","Hard"][q.diff]}</span></div>${qHTML(q,name)}
+    <div id="pq-fb"></div><div class="stack"><button class="primary block" id="pq-check">Check answer</button><button class="primary block" id="pq-next" hidden>${P.i+1<P.list.length?"Next question →":"See results"}</button></div>`;
   $("#pq-check").onclick=checkPQ;$("#pq-next").onclick=()=>{P.i++;if(P.i<P.list.length)renderPQ();else practiceSummary();};
   clearInterval(pTick);pTick=setInterval(()=>{$("#p-clock").textContent=fmt((Date.now()-P.qt)/1000);},1000);$("#p-clock").textContent="0:00";
   $("#p-card").scrollIntoView({block:"nearest"});
@@ -382,7 +399,7 @@ function checkPQ(){
   fb.innerHTML=`<div class="feedback ${ok?"ok":"no"}"><div><b>${ok?"Correct":"Not quite"}</b> <span class="note">· ${fmt(secs)}</span></div>${ok?"":`<div>Answer: <b>${esc(correctText(q))}</b></div>`}<div>${esc(q.exp)}</div>
    <div class="row"><button class="ghost" id="pq-ai">Explain it another way</button>${ok?"":`<span class="note">Saved to Mistakes</span>`}</div><div class="ai" id="pq-ai-out" hidden></div></div>`;
   $("#pq-ai").onclick=()=>explainDiff(q,v,$("#pq-ai-out"),$("#pq-ai"));
-  $("#pq-check").hidden=true;$("#pq-next").hidden=false;$("#pq-next").focus();
+  $("#pq-check").hidden=true;$("#pq-next").hidden=false;
 }
 function practiceSummary(){
   clearInterval(pTick);$("#p-session").hidden=true;const s=$("#p-summary");s.hidden=false;
@@ -390,7 +407,7 @@ function practiceSummary(){
   const missed=P.res.filter(r=>!r.ok);
   s.innerHTML=`<h2>${c} of ${n} correct</h2><p class="note">Average ${fmt(avg)} per question. Target pace: about 1:30 Verbal, 1:45 Quant.</p>
    ${missed.length?`<h4>Missed</h4><div class="stack">${missed.map(r=>{const q=QBY[r.id];return `<div class="note">• ${esc((q.stem||q.a+" vs "+q.b).slice(0,110))}${(q.stem||"").length>110?"…":""}</div>`;}).join("")}</div>`:""}
-   <div class="row"><button class="primary" id="ps-again">New set</button>${missed.length?`<button id="ps-retry">Retry the ${missed.length} missed</button>`:""}</div>`;
+   <div class="stack"><button class="primary block" id="ps-again">New set</button>${missed.length?`<button class="block" id="ps-retry">Retry the ${missed.length} missed</button>`:""}</div>`;
   $("#ps-again").onclick=()=>{updateCount();showPracticeSetup();};
   if($("#ps-retry"))$("#ps-retry").onclick=()=>startSet(missed.map(r=>QBY[r.id]));
   renderToday();
@@ -402,7 +419,7 @@ let vGroup=0, vMode="learn", V=null;
 function wordState(w){return S.vocab[w]||null;}
 function renderGroups(){
   $("#groups").innerHTML=VOCAB.map((g,i)=>{const known=g.filter(w=>(wordState(w[0])||{}).b>=3).length,seen=g.filter(w=>wordState(w[0])).length;
-    return `<button data-g="${i}" aria-pressed="${i===vGroup}"><span style="font-family:var(--f-display);font-weight:500">Group ${i+1}${i>=12?' <span class="pill">adv</span>':''}</span><small>${known}/25 known · ${seen} seen</small><span class="bar"><i style="width:${known/25*100}%"></i></span></button>`;}).join("");
+    return `<button data-g="${i}" aria-pressed="${i===vGroup}"><span style="font-family:var(--f-display);font-weight:500">Group ${i+1}${i>=12?' <span class="pill">adv</span>':''}</span><small>${known}/25 known</small><span class="bar"><i style="width:${known/25*100}%"></i></span></button>`;}).join("");
   const due=dueWords().length;$("#v-due").textContent=due+" due today";
   $("#v-gtitle").textContent="Group "+(vGroup+1);
   $("#wordgrid").innerHTML=VOCAB[vGroup].map(w=>{const s=wordState(w[0]);return `<button data-w="${esc(w[0])}" class="${s?"b"+s.b:""}">${esc(w[0])}</button>`;}).join("");
@@ -430,11 +447,11 @@ function renderCard(){
   }
   const x=V.queue[V.i],s=wordState(x.w);
   st.innerHTML=`<div class="card flash" id="flash" role="button" tabindex="0" aria-label="Flashcard, press to flip">
-    <div class="mono">${V.single?"":(V.i+1)+" / "+V.queue.length+" · "}Group ${x.g+1} · ${s?(s.b>=3?"known":"learning"):"new"}</div>
+    <div class="status">${V.single?"":(V.i+1)+" of "+V.queue.length+" · "}Group ${x.g+1} · ${s?(s.b>=3?"known":"learning"):"new"}</div>
     <div class="word">${esc(x.w)}</div><div class="note">${esc(x.pos)}</div>
     <div id="f-back"${V.flip?"":" hidden"}><div class="def">${esc(x.def)}</div><div class="exs">${esc(x.ex)}</div></div>
     <div class="note" id="f-hint"${V.flip?" hidden":""}>Say the meaning, then tap to check</div></div>
-    ${V.single?`<div class="row" style="justify-content:center"><button id="v-close">Close</button></div>`:`<div class="row" style="justify-content:center"><button id="v-again">Didn't know</button><button class="primary" id="v-know">Knew it</button></div>`}`;
+    ${V.single?`<button class="block" id="v-close">Close</button>`:`<div class="bigbtns"><button class="no" id="v-again">Didn't know</button><button class="yes" id="v-know">Knew it</button></div>`}`;
   const flip=()=>{V.flip=!V.flip;$("#f-back").hidden=!V.flip;$("#f-hint").hidden=V.flip;};
   $("#flash").onclick=flip;$("#flash").onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();flip();}};
   if(V.single){$("#v-close").onclick=()=>setVMode(vMode);return;}
@@ -485,7 +502,7 @@ function saveMA(){if(!M)return;const q=M.list[M.i];const v=readAnswer(q,$("#m-ca
 function renderMQ(){
   const q=M.list[M.i];
   $("#m-grid").innerHTML=M.list.map((x,i)=>`<button data-i="${i}" class="${M.ans[x.id]!=null?"answered":""}${M.mark[x.id]?" marked":""}${i===M.i?" cur":""}">${i+1}</button>`).join("");
-  $("#m-card").innerHTML=`<div class="qhead"><span class="mono">Question ${M.i+1} of ${M.list.length}</span>${M.mark[q.id]?'<span class="pill now">marked</span>':""}</div>${qHTML(q,"mq")}`;
+  $("#m-card").innerHTML=`<div class="qhead"><span class="status">Question ${M.i+1} of ${M.list.length}</span>${M.mark[q.id]?'<span class="pill now">marked</span>':""}</div>${qHTML(q,"mq")}`;
   restoreAnswer(q,$("#m-card"),"mq",M.ans[q.id]);
   $("#m-mark").textContent=M.mark[q.id]?"Unmark":"Mark";
   $("#m-prev").disabled=M.i===0;$("#m-next").disabled=M.i===M.list.length-1;
@@ -506,7 +523,7 @@ function submitMock(){
   $("#m-run").hidden=true;const r=$("#m-result");r.hidden=false;
   r.innerHTML=`<div class="card"><h2>${c} / ${M.list.length} correct · ${M.sec==="quant"?"Quant":"Verbal"}</h2><p class="note">Time used ${fmt(used)} of ${M.mins}:00. On the real test, a strong first section (about 9+ of 12) is what unlocks the harder second section.</p>
     <div class="qgrid">${rows.map(x=>`<button data-r="${x.i}" class="${x.ok?"r":"w"}">${x.i+1}</button>`).join("")}</div>
-    <div class="row"><button class="primary" id="mr-new">Back to sections</button></div></div><div id="mr-detail" class="view"></div>`;
+    <button class="primary block" id="mr-new">Back to sections</button></div><div id="mr-detail" class="view"></div>`;
   const detail=i=>{const {q,v,ok}=rows[i];$("#mr-detail").innerHTML=`<div class="card q" id="mr-card"><div class="qhead"><span class="mono">Question ${i+1}</span><span class="pill ${ok?"done":"warn"}">${ok?"correct":"missed"}</span></div>${qHTML(q,"mr")}<div class="feedback ${ok?"ok":"no"}"><div>Your answer: ${esc(yourText(q,v))}</div><div>Correct: <b>${esc(correctText(q))}</b></div><div>${esc(q.exp)}</div><div class="row"><button class="ghost" id="mr-ai">Explain it another way</button></div><div class="ai" id="mr-ai-out" hidden></div></div></div>`;
     restoreAnswer(q,$("#mr-card"),"mr",v);markOptions(q,$("#mr-card"),v);$$("#mr-card input").forEach(x=>x.disabled=true);$("#mr-ai").onclick=()=>explainDiff(q,v,$("#mr-ai-out"),$("#mr-ai"));$("#mr-card").scrollIntoView({behavior:"smooth",block:"start"});};
   $$("[data-r]").forEach(b=>b.onclick=()=>detail(+b.dataset.r));
@@ -515,6 +532,7 @@ function submitMock(){
 }
 function renderMockHistory(){
   const h=S.mocks.slice().reverse().slice(0,8);
+  $("#m-history").hidden=!h.length;
   $("#m-history").innerHTML=h.length?`<h4>Recent sections</h4><div class="scroll-x"><table><thead><tr><th>Date</th><th>Section</th><th>Score</th><th>Time</th></tr></thead><tbody>${h.map(m=>`<tr><td class="mono">${m.d}</td><td>${m.sec==="quant"?"Quant":"Verbal"}</td><td class="mono">${m.c}/${m.n}</td><td class="mono">${fmt(m.secs)}</td></tr>`).join("")}</tbody></table></div>`:"";
 }
 
@@ -639,11 +657,18 @@ $("#errform").addEventListener("submit",async e=>{
 });
 
 /* ---------- ROUTING ---------- */
-const VIEWS=["today","learn","lesson","practice","vocab","mock","essay","tutor","mistakes","plan","account"];
+const VIEWS=["today","learn","lesson","practice","vocab","more","mock","essay","tutor","mistakes","plan","account"];
+const TITLES={today:"Today",learn:"Lessons",lesson:"Lesson",practice:"Practice",vocab:"Words",more:"More",mock:"Timed section",essay:"Essay",tutor:"AI tutor",mistakes:"Mistakes",plan:"12-week plan",account:"Account"};
+const PARENT={lesson:"learn",mock:"more",essay:"more",tutor:"more",mistakes:"more",plan:"more",account:"more"};
+let lastView=null;
+addEventListener("scroll",()=>{$("#appbar").classList.toggle("scrolled",scrollY>4);},{passive:true});
 function route(){
   let h=location.hash.slice(1);let v=h.startsWith("lesson-")?"lesson":(VIEWS.includes(h)?h:"today");
   VIEWS.forEach(x=>{$("#v-"+x).hidden=x!==v;});
-  const tab=v==="lesson"?"learn":v;
+  const tab=PARENT[v]||v;
+  $("#bar-title").textContent=TITLES[v]||"GRE Prep";
+  const back=$("#back-btn");back.hidden=!PARENT[v];back.setAttribute("href","#"+(PARENT[v]||"today"));
+  if(v!==lastView){window.scrollTo(0,0);lastView=v;}
   $$("#tabs a").forEach(a=>a.setAttribute("aria-current",a.getAttribute("href")==="#"+tab?"page":"false"));
   if(v==="today")renderToday();
   if(v==="learn")renderLessonList();
@@ -672,7 +697,9 @@ function setAcctMode(m){acctMode=m;$$("#acct-mode button").forEach(b=>b.setAttri
   $("#a-code-wrap").hidden=!(m==="signup"&&inviteOnly);renderAccount();}
 function renderAccount(){
   $("#acct-out").hidden=!!auth;$("#acct-in").hidden=!auth;
-  $("#acct-chip").textContent=auth?"@"+auth.username:"Sign in to sync";
+  const av=$("#avatar");av.textContent=auth?auth.username[0].toUpperCase():"?";av.classList.toggle("off",!auth);
+  $("#acct-chip").setAttribute("aria-label",auth?"Account: "+auth.username:"Sign in to sync");
+  $("#more-acct").textContent=auth?"Signed in as "+auth.username:"Sign in to sync your devices";
   if(auth){$("#a-name").textContent=auth.username;setSync(syncText||"Synced");}
   else{const n=$("#a-hint");n.textContent=acctMode==="signup"?(signupOpen?"This app has no account yet: the first one created becomes the owner.":(inviteOnly?"Sign-up needs the invite code.":"This app already has its owner account. Log in with it.")):"";}
   updateAIText();renderInstall();
