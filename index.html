@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GRE Prep Hub</title>
+<meta name="description" content="A 12-week GRE course: lessons, 155 practice questions, 600-word spaced vocabulary, timed sections, essay practice and an AI tutor.">
+<meta name="theme-color" content="#16203A">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GRE Prep">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header><div class="wrap">
+  <div class="eyebrow" id="eyebrow">12-week course · target Quant 166+ · Verbal 155+</div>
+  <div class="row spread"><h1>GRE Prep <span class="hl">Hub</span></h1><span class="row"><button id="install-btn" class="primary" hidden>Install app</button><a class="btn" href="#account" id="acct-chip">Sign in to sync</a></span></div>
+  <div class="stats">
+    <div class="stat"><b id="st-week">W1</b><span>current week</span></div>
+    <div class="stat"><b id="st-streak">0</b><span>day streak</span></div>
+    <div class="stat"><b id="st-acc">–</b><span>practice accuracy</span></div>
+    <div class="stat"><b id="st-words">0</b><span>words learned</span></div>
+    <div class="stat"><b id="st-lessons">0/18</b><span>lessons done</span></div>
+  </div>
+</div></header>
+
+<nav aria-label="Sections"><div class="wrap" id="tabs">
+  <a href="#today">Today</a><a href="#learn">Lessons</a><a href="#practice">Practice</a><a href="#vocab">Vocab</a><a href="#mock">Mock</a><a href="#essay">Essay</a><a href="#tutor">Tutor</a><a href="#mistakes">Mistakes</a><a href="#plan">Plan</a><a href="#account">Account</a>
+</div></nav>
+
+<main><div class="wrap">
+
+<!-- TODAY -->
+<section id="v-today" class="view">
+  <div class="card">
+    <div class="row spread"><h2 id="today-title">Today</h2><span class="status" id="savestate">Loading your progress…</span></div>
+    <div class="todo" id="todo"></div>
+  </div>
+  <div class="card">
+    <div class="row spread"><h3>Where you're losing points</h3><a class="btn" href="#practice" id="drill-weak">Drill weakest topic</a></div>
+    <div class="weak" id="weak"></div>
+  </div>
+  <div class="card">
+    <h3>This week</h3>
+    <div id="today-week" class="stack"></div>
+  </div>
+</section>
+
+<!-- LESSONS -->
+<section id="v-learn" class="view" hidden>
+  <div class="card"><h2>Lessons</h2><p class="note">18 lessons in the order of the 12-week plan. Each one ends with practice on that topic.</p>
+    <div class="seg" id="track-filter"><button data-t="all" aria-pressed="true">All</button><button data-t="Quant" aria-pressed="false">Quant</button><button data-t="Verbal" aria-pressed="false">Verbal</button><button data-t="Writing" aria-pressed="false">Writing</button><button data-t="Strategy" aria-pressed="false">Strategy</button></div>
+  </div>
+  <div class="card"><div class="lessons" id="lesson-list"></div></div>
+</section>
+
+<section id="v-lesson" class="view" hidden>
+  <div class="row"><a class="btn" href="#learn">← All lessons</a></div>
+  <article class="card" id="lesson"></article>
+</section>
+
+<!-- PRACTICE -->
+<section id="v-practice" class="view" hidden>
+  <div class="card" id="p-setup">
+    <h2>Practice</h2>
+    <p class="note"><span id="p-total">155</span> original questions with full explanations, including 32 hard Quant questions for a 165+ target. Missed questions go to your Mistakes list automatically.</p>
+    <div class="filters">
+      <label>Section<select id="f-sec"><option value="all">Both</option><option value="quant">Quant</option><option value="verbal">Verbal</option></select></label>
+      <label>Topic<select id="f-topic"></select></label>
+      <label>Difficulty<select id="f-diff"><option value="0">Any</option><option value="1">Easy</option><option value="2">Medium</option><option value="3">Hard</option></select></label>
+      <label>Which questions<select id="f-pool"><option value="new">Not tried yet</option><option value="all">All</option><option value="missed">Missed before</option></select></label>
+    </div>
+    <div class="row"><label class="note" for="f-len">Questions</label><select id="f-len"><option>5</option><option selected>10</option><option>20</option><option value="999">All matching</option></select>
+      <button class="primary" id="p-start">Start set</button><span class="status" id="p-count"></span></div>
+  </div>
+  <div id="p-session" class="view" hidden>
+    <div class="row spread"><span class="mono" id="p-pos"></span><span class="row"><span class="mono" id="p-clock">0:00</span><button id="p-quit">End set</button></span></div>
+    <div class="bar"><i id="p-bar"></i></div>
+    <div class="card q" id="p-card"></div>
+  </div>
+  <div id="p-summary" class="card" hidden></div>
+</section>
+
+<!-- VOCAB -->
+<section id="v-vocab" class="view" hidden>
+  <div class="card">
+    <div class="row spread"><h2>Vocabulary</h2><span class="mono" id="v-due"></span></div>
+    <p class="note">600 words in 24 groups: Groups 1–12 are the core high-frequency set, 13–24 the advanced set for Verbal 155+. Learn a group, then spaced review brings each word back just before you'd forget it.</p>
+    <div class="groups" id="groups"></div>
+    <div class="seg" id="v-mode"><button data-m="learn" aria-pressed="true">Learn group</button><button data-m="review" aria-pressed="false">Review due</button><button data-m="quiz" aria-pressed="false">Quiz group</button></div>
+  </div>
+  <div id="v-stage" class="view"></div>
+  <div class="card"><h3 id="v-gtitle">Group 1</h3><p class="note">Yellow = learning, green = known. Tap a word to see it.</p><div class="wordgrid" id="wordgrid"></div></div>
+</section>
+
+<!-- MOCK -->
+<section id="v-mock" class="view" hidden>
+  <div class="card" id="m-setup">
+    <h2>Timed section</h2>
+    <p class="note">A 12-question section at real test pace, drawn from the bank: Quant gets 21 minutes, Verbal 18, the same as the first section of each measure on the GRE. No feedback until you submit. For a real scaled score, use the ETS POWERPREP tests.</p>
+    <div class="row"><button class="primary" data-mock="quant">Start Quant section</button><button class="primary" data-mock="verbal">Start Verbal section</button></div>
+    <div id="m-history" class="stack"></div>
+  </div>
+  <div id="m-run" class="view" hidden>
+    <div class="row spread"><span class="timer" id="m-timer">21:00</span><span class="row"><button id="m-mark">Mark</button><button class="primary" id="m-submit">Submit section</button></span></div>
+    <div class="qgrid" id="m-grid"></div>
+    <div class="card q" id="m-card"></div>
+    <div class="row spread"><button id="m-prev">← Back</button><button id="m-next">Next →</button></div>
+  </div>
+  <div id="m-result" class="view" hidden></div>
+</section>
+
+<!-- ESSAY -->
+<section id="v-essay" class="view" hidden>
+  <div class="card">
+    <div class="row spread"><h2>Issue essay</h2><span class="timer" id="e-timer">30:00</span></div>
+    <p class="note">Original practice prompts in the GRE Issue format. Write against the clock, then get scored feedback on the 0–6 scale.</p>
+    <label class="note" for="e-prompt-sel">Prompt</label>
+    <select id="e-prompt-sel"></select>
+    <div class="ex"><p id="e-claim" style="font-size:17px"></p><p class="note" id="e-instr"></p></div>
+    <textarea id="e-text" class="essay-box" placeholder="Start with a clear position in your first paragraph…"></textarea>
+    <div class="row spread"><span class="mono" id="e-words">0 words</span><span class="row"><button id="e-start">Start 30-min timer</button><button id="e-new">New essay</button><button id="e-save">Save essay</button><button class="primary" id="e-grade">Score my essay</button></span></div>
+    <div id="e-feedback"></div>
+  </div>
+  <div class="card"><h3>Saved essays</h3><div id="e-list" class="stack"></div></div>
+</section>
+
+<!-- TUTOR -->
+<section id="v-tutor" class="view" hidden>
+  <div class="card">
+    <div class="row spread"><h2>Tutor <span class="pill" id="t-mode"></span></h2><label class="note">Reply in <select id="t-lang"><option value="en">English</option><option value="bn">Banglish</option></select></label></div>
+    <p class="note">Ask anything: a concept you're stuck on, a question from a book, a study-plan change. The tutor gets your progress summary from this app.</p>
+    <div class="chips" id="t-chips">
+      <button>Teach me remainders from scratch</button><button>Give me 3 hard QC questions, answers after I reply</button><button>Quiz me on Group 3 words</button><button>Which topics should I focus on this week?</button><button>How do I stop making careless mistakes?</button>
+    </div>
+    <div class="chat" id="t-chat"></div>
+    <form id="t-form" class="stack"><textarea id="t-in" placeholder="Type your question…" rows="3"></textarea><div class="row"><button class="primary" type="submit" id="t-send">Send</button><button type="button" id="t-stop" hidden>Stop</button><button type="button" class="ghost" id="t-clear">New chat</button><span class="status" id="t-status"></span></div></form>
+  </div>
+</section>
+
+<!-- MISTAKES -->
+<section id="v-mistakes" class="view" hidden>
+  <div class="card">
+    <div class="row spread"><h2>Mistakes</h2><button class="primary" id="mk-retry">Retry missed questions</button></div>
+    <p class="note">Questions you missed in this app are listed automatically. Add mistakes from books and POWERPREP below. Review this list every Sunday.</p>
+    <div id="mk-auto" class="stack"></div>
+  </div>
+  <div class="card">
+    <h3>Log a mistake from another source</h3>
+    <form class="form" id="errform">
+      <label>Source<input id="x-src" placeholder="Official Guide p.214 #7" required></label>
+      <label>Type<select id="x-type"><option>Quant – Comparison</option><option>Quant – Problem Solving</option><option>Quant – Data</option><option>Verbal – Text Completion</option><option>Verbal – Sentence Equivalence</option><option>Verbal – Reading</option><option>Writing</option></select></label>
+      <label>Why I missed it<select id="x-why"><option>Concept gap</option><option>Careless mistake</option><option>Misread the question</option><option>Ran out of time</option><option>Unknown word</option></select></label>
+      <label>Topic<input id="x-topic" placeholder="remainders, inference…"></label>
+      <label class="full">Lesson for next time<textarea id="x-lesson" placeholder="Plug in negatives before choosing A in QC."></textarea></label>
+      <div class="full row"><button class="primary" type="submit" id="x-add">Add to log</button><span class="status" id="x-status"></span></div>
+    </form>
+    <div id="errlist" class="stack"></div>
+  </div>
+</section>
+
+<!-- PLAN -->
+<section id="v-plan" class="view" hidden>
+  <div class="card">
+    <div class="row spread"><h2>12-week plan</h2><label class="note" for="startdate">Start date <input type="date" id="startdate"></label></div>
+    <p class="note">Tuned for a CS background: Quant is where you earn the 320+, so from Week 3 every day includes a short Hard Quant set. If a Quant lesson feels easy, read the traps, do 5 questions and move on. About 2.5 hours on weekdays; Saturday a timed section, Sunday review mistakes.</p>
+    <div class="routine">
+      <div><b>30 min</b><span>Vocab: new group words + due reviews</span></div>
+      <div><b>60 min</b><span>This week's lesson</span></div>
+      <div><b>45 min</b><span>Practice set, then read every explanation</span></div>
+      <div><b>15 min</b><span>One hard English article</span></div>
+    </div>
+  </div>
+  <div id="weeks" class="view"></div>
+  <div class="card res">
+    <h2>Free resources to use with this app</h2>
+    <ul>
+      <li><a href="https://www.ets.org/gre/test-takers/general-test/prepare/powerprep.html" target="_blank" rel="noopener">ETS POWERPREP Online</a><span class="tag">FREE · 2 FULL TESTS</span><p class="note">Official adaptive tests. Test 1 in Week 1, Test 2 in Week 6.</p></li>
+      <li><a href="https://www.ets.org/gre/test-takers/general-test/prepare/content/analytical-writing/issue.html" target="_blank" rel="noopener">ETS Issue task and topic pool</a><span class="tag">FREE</span><p class="note">Every real Issue prompt is published. Paste one into the Essay tab to practice it.</p></li>
+      <li><a href="https://www.youtube.com/@GregMat" target="_blank" rel="noopener">GregMat on YouTube</a><span class="tag">FREE</span><p class="note">Strategy videos and walkthroughs. GregMat+ is a low-cost paid course if you want live classes later.</p></li>
+      <li><a href="https://www.khanacademy.org/math" target="_blank" rel="noopener">Khan Academy Math</a><span class="tag">FREE</span><p class="note">Refresh any rusty school math topic.</p></li>
+      <li><a href="https://gre.myprepclub.com/forum/" target="_blank" rel="noopener">GRE Prep Club forum</a><span class="tag">FREE</span><p class="note">Search any hard question to see several solutions.</p></li>
+      <li><a href="https://aeon.co/essays" target="_blank" rel="noopener">Aeon essays</a><span class="tag">FREE</span><p class="note">Dense argument-driven reading, close to GRE passages.</p></li>
+      <li><b>The Official Guide to the GRE</b><span class="tag paid">PAID BOOK</span><p class="note">Hundreds of real questions; the single most useful purchase.</p></li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ACCOUNT -->
+<section id="v-account" class="view" hidden>
+  <div class="card" id="acct-out">
+    <h2>Sync your progress</h2>
+    <p class="note">Create an account to keep your phone and laptop in step. Without one, everything still works and is saved on this device only.</p>
+    <div class="seg" id="acct-mode"><button data-m="login" aria-pressed="true">Log in</button><button data-m="signup" aria-pressed="false">Create account</button></div>
+    <p class="note" id="a-hint"></p>
+    <form id="acct-form" class="form">
+      <label>Username<input id="a-user" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]{3,24}"></label>
+      <label>Password<input id="a-pass" type="password" autocomplete="current-password" required minlength="8"></label>
+      <label class="full" id="a-code-wrap" hidden>Invite code<input id="a-code" autocomplete="off"></label>
+      <div class="full row"><button class="primary" type="submit" id="a-submit">Log in</button><span class="status" id="a-status"></span></div>
+    </form>
+  </div>
+  <div class="card" id="acct-in" hidden>
+    <h2>Signed in as <span id="a-name"></span></h2>
+    <p class="note" id="a-sync"></p>
+    <p class="note">Progress, mistakes and essays sync automatically a few seconds after you change something, and when you switch away from the app.</p>
+    <div class="row"><button id="a-syncnow">Sync now</button><button id="a-logout">Log out</button></div>
+  </div>
+  <div class="card">
+    <h3>Install the app</h3>
+    <p class="note" id="inst-text"></p>
+    <div class="row"><button class="primary" id="inst-btn2" hidden>Install GRE Prep Hub</button></div>
+  </div>
+  <div class="card"><h3>AI tutor</h3><p class="note" id="ai-text"></p></div>
+</section>
+
+</div></main>
+
+<script src="/js/data/lessons.js"></script>
+<script src="/js/data/questions.js"></script>
+<script src="/js/data/questions-hard.js"></script>
+<script src="/js/data/vocab.js"></script>
+<script src="/js/data/vocab-advanced.js"></script>
+<script src="/js/merge.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

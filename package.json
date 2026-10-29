@@ -1,0 +1,13 @@
+{
+  "name": "gre-prep-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "12-week GRE prep web app with synced progress and an AI tutor",
+  "type": "module",
+  "scripts": {
+    "test": "node test/run.mjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.2"
+  }
+}
